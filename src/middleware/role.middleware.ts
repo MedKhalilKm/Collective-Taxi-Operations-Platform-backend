@@ -45,6 +45,13 @@ export function isAdminOrSuperAdmin(user: AuthenticatedUser): boolean {
 }
 
 /**
+ * Checks if user can manage driver records.
+ */
+export function canManageDrivers(user: AuthenticatedUser): boolean {
+  return hasRole(user, [Role.SuperAdmin, Role.Admin, Role.Agent]);
+}
+
+/**
  * Checks if user is accessing their own resource OR is Admin/SuperAdmin.
  */
 export function isSelfOrAdmin(user: AuthenticatedUser, targetUserId: string): boolean {
