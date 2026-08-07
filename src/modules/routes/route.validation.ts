@@ -9,7 +9,7 @@ export const createRouteSchema = z
     fee: z.coerce.number().positive("Fee must be positive"),
     altitude: z.coerce.number(),
     description: z.string().min(1, "Description is required"),
-    stationId: z.coerce.number().int().positive("Station ID is required"),
+    stationId: z.coerce.number().int().positive("Station ID must be positive").optional(),
   })
   .refine((data) => data.firstDestination !== data.secondDestination, {
     message: "Second destination must be different from first destination",
@@ -25,7 +25,7 @@ export const updateRouteSchema = z
     fee: z.coerce.number().positive("Fee must be positive").optional(),
     altitude: z.coerce.number().optional(),
     description: z.string().min(1, "Description is required").optional(),
-    stationId: z.coerce.number().int().positive("Station ID is required").optional(),
+    stationId: z.coerce.number().int().positive("Station ID must be positive").optional(),
   })
   .refine(
     (data) =>

@@ -6,7 +6,7 @@ export interface CreateRoutePayload {
   fee: number;
   altitude: number;
   description: string;
-  stationId: number;
+  stationId?: number;
 }
 
 export interface UpdateRoutePayload {

@@ -1,6 +1,6 @@
 import { Route, Station } from "@prisma/client";
 
-type RouteWithStation = Route & { station: Station };
+type RouteWithStation = Route & { station: Station | null };
 
 export interface RouteResponseDto {
   id: number;
@@ -11,8 +11,8 @@ export interface RouteResponseDto {
   fee: number;
   altitude: number;
   description: string;
-  stationId: number;
-  station: Station;
+  stationId: number | null;
+  station: Station | null;
 }
 
 export class RouteDto {

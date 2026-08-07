@@ -167,8 +167,8 @@ model Route {
   altitude          Float
   description       String
 
-  stationId Int
-  station   Station @relation(fields: [stationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  stationId Int?
+  station   Station? @relation(fields: [stationId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   vehicles Vehicle[]
 
