@@ -1,6 +1,6 @@
 import { Route, Station } from "@prisma/client";
 
-type RouteWithStation = Route & { station: Station | null };
+type RouteWithStations = Route & { stations: Station[] };
 
 export interface RouteResponseDto {
   id: number;
@@ -11,12 +11,12 @@ export interface RouteResponseDto {
   fee: number;
   altitude: number;
   description: string;
-  stationId: number | null;
-  station: Station | null;
+  stationIds: number[];
+  stations: Station[];
 }
 
 export class RouteDto {
-  static toResponse(route: RouteWithStation): RouteResponseDto {
+  static toResponse(route: RouteWithStations): RouteResponseDto {
     return {
       id: route.id,
       name: route.name,
@@ -26,12 +26,12 @@ export class RouteDto {
       fee: route.fee,
       altitude: route.altitude,
       description: route.description,
-      stationId: route.stationId,
-      station: route.station,
+      stationIds: route.stations.map((station) => station.id),
+      stations: route.stations,
     };
   }
 
-  static toResponseList(routes: RouteWithStation[]): RouteResponseDto[] {
+  static toResponseList(routes: RouteWithStations[]): RouteResponseDto[] {
     return routes.map((route) => this.toResponse(route));
   }
 }

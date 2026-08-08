@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { CreateRoutePayload, RouteQueryFilters, UpdateRoutePayload } from "./route.types";
 
 const routeInclude = {
-  station: true,
+  stations: true,
 } satisfies Prisma.RouteInclude;
 
 export class RouteRepository {
@@ -22,12 +22,12 @@ export class RouteRepository {
         { description: { contains: search, mode: "insensitive" } },
         ...(Number.isNaN(numericSearch)
           ? []
-          : [{ routeNumber: numericSearch }, { stationId: numericSearch }]),
+          : [{ routeNumber: numericSearch }, { stations: { some: { id: numericSearch } } }]),
       ];
     }
 
     if (stationId) {
-      where.stationId = stationId;
+      where.stations = { some: { id: stationId } };
     }
 
     const [routes, total] = await Promise.all([
@@ -52,16 +52,34 @@ export class RouteRepository {
   }
 
   async create(data: CreateRoutePayload) {
+    const { stationIds, ...routeData } = data;
     return prisma.route.create({
-      data,
+      data: {
+        ...routeData,
+        stations: stationIds?.length
+          ? {
+              connect: stationIds.map((stationId) => ({ id: stationId })),
+            }
+          : undefined,
+      },
       include: routeInclude,
     });
   }
 
   async update(id: number, data: UpdateRoutePayload) {
+    const { stationIds, ...routeData } = data;
     return prisma.route.update({
       where: { id },
-      data,
+      data: {
+        ...routeData,
+        ...(stationIds
+          ? {
+              stations: {
+                set: stationIds.map((stationId) => ({ id: stationId })),
+              },
+            }
+          : {}),
+      },
       include: routeInclude,
     });
   }

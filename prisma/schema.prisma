@@ -147,7 +147,7 @@ model Station {
   creationDate DateTime @default(now())
   gpsRadius    Float
 
-  routes    Route[]
+  routes    Route[] @relation("RouteStations")
   entrances Entrance[]
 
   @@index([governorate, city])
@@ -167,12 +167,10 @@ model Route {
   altitude          Float
   description       String
 
-  stationId Int?
-  station   Station? @relation(fields: [stationId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  stations  Station[] @relation("RouteStations")
 
   vehicles Vehicle[]
 
-  @@index([stationId])
 }
 
 // ----------------------------------------------------------------------------
