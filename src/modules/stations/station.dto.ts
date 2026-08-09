@@ -8,6 +8,7 @@ export interface StationResponseDto {
   governorate: string;
   city: string;
   latitude: number;
+  longitude: number;
   altitude: number;
   creationDate: Date;
   gpsRadius: number;
@@ -23,7 +24,8 @@ export class StationDto {
       governorate: station.governorate,
       city: station.city,
       latitude: station.latitude,
-      altitude: station.altitude,
+      longitude: station.longitude,
+      altitude: station.longitude,
       creationDate: station.creationDate,
       gpsRadius: station.gpsRadius,
       routeIds: station.routes.map((route) => route.id),

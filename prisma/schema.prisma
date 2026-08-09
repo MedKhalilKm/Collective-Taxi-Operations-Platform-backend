@@ -143,7 +143,7 @@ model Station {
   governorate  String
   city         String
   latitude     Float
-  altitude     Float
+  longitude    Float
   creationDate DateTime @default(now())
   gpsRadius    Float
 
@@ -189,8 +189,8 @@ model Vehicle {
   registrationDate   DateTime
   inspectionExpiry   DateTime
 
-  routeId Int
-  route   Route @relation(fields: [routeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  routeId Int?
+  route   Route? @relation(fields: [routeId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   entrances Entrance[]
 

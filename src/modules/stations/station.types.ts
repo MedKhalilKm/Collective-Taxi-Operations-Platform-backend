@@ -3,7 +3,8 @@ export interface CreateStationPayload {
   governorate: string;
   city: string;
   latitude: number;
-  altitude: number;
+  longitude?: number;
+  altitude?: number;
   gpsRadius: number;
   routeIds?: number[];
 }
@@ -13,6 +14,7 @@ export interface UpdateStationPayload {
   governorate?: string;
   city?: string;
   latitude?: number;
+  longitude?: number;
   altitude?: number;
   gpsRadius?: number;
   routeIds?: number[];

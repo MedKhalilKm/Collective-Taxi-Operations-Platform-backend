@@ -5,9 +5,13 @@ export const createStationSchema = z.object({
   governorate: z.string().min(1, "Governorate is required"),
   city: z.string().min(1, "City is required"),
   latitude: z.coerce.number(),
-  altitude: z.coerce.number(),
+  longitude: z.coerce.number().optional(),
+  altitude: z.coerce.number().optional(),
   gpsRadius: z.coerce.number().positive("GPS radius must be positive"),
   routeIds: z.array(z.coerce.number().int().positive("Route ID must be positive")).optional(),
+}).refine((data) => data.longitude !== undefined || data.altitude !== undefined, {
+  message: "Either longitude or altitude must be provided",
+  path: ["longitude"],
 });
 
 export const updateStationSchema = z.object({
@@ -15,6 +19,7 @@ export const updateStationSchema = z.object({
   governorate: z.string().min(1, "Governorate is required").optional(),
   city: z.string().min(1, "City is required").optional(),
   latitude: z.coerce.number().optional(),
+  longitude: z.coerce.number().optional(),
   altitude: z.coerce.number().optional(),
   gpsRadius: z.coerce.number().positive("GPS radius must be positive").optional(),
   routeIds: z.array(z.coerce.number().int().positive("Route ID must be positive")).optional(),
