@@ -2,12 +2,14 @@ export interface CreateEntrancePayload {
   vehicleId: number;
   stationId: number;
   driverId: string;
+  status?: "ready" | "pending" | "waiting";
 }
 
 export interface UpdateEntrancePayload {
   vehicleId?: number;
   stationId?: number;
   driverId?: string;
+  status?: "ready" | "pending" | "waiting";
 }
 
 export interface EntranceQueryFilters {
@@ -15,6 +17,7 @@ export interface EntranceQueryFilters {
   vehicleId?: number;
   stationId?: number;
   driverId?: string;
+  status?: "ready" | "pending" | "waiting";
   page?: number;
   limit?: number;
 }

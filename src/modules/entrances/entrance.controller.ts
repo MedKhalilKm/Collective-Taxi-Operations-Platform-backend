@@ -29,6 +29,7 @@ export class EntranceController {
         vehicleId: searchParams.get("vehicleId") || undefined,
         stationId: searchParams.get("stationId") || undefined,
         driverId: searchParams.get("driverId") || undefined,
+        status: searchParams.get("status") || undefined,
         page: searchParams.get("page") || undefined,
         limit: searchParams.get("limit") || undefined,
       };

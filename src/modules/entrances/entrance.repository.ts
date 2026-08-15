@@ -12,7 +12,7 @@ type EntranceWithRelations = Prisma.EntranceGetPayload<{ include: typeof entranc
 
 export class EntranceRepository {
   async findMany(filters: EntranceQueryFilters): Promise<{ entrances: EntranceWithRelations[]; total: number }> {
-    const { search, vehicleId, stationId, driverId, page = 1, limit = 10 } = filters;
+    const { search, vehicleId, stationId, driverId, status, page = 1, limit = 10 } = filters;
     const skip = (page - 1) * limit;
 
     const where: Prisma.EntranceWhereInput = {};
@@ -40,6 +40,10 @@ export class EntranceRepository {
 
     if (driverId) {
       where.driverId = driverId;
+    }
+
+    if (status) {
+      where.status = status;
     }
 
     const [entrances, total] = await Promise.all([

@@ -23,6 +23,12 @@ enum Role {
   Driver
 }
 
+enum EntranceStatus {
+  ready
+  pending
+  waiting
+}
+
 // ----------------------------------------------------------------------------
 // USER  (merged: your fields + Better Auth required fields)
 // ----------------------------------------------------------------------------
@@ -204,6 +210,7 @@ model Vehicle {
 model Entrance {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
+  status    EntranceStatus @default(waiting)
 
   vehicleId Int
   vehicle   Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Restrict, onUpdate: Cascade)
@@ -227,6 +234,7 @@ model Entrance {
 
 model Reservation {
   id            Int      @id @default(autoincrement())
+  ReservationRef String   @unique @default(cuid())
   numberOfSeats Int
   createdAt     DateTime @default(now())
 
