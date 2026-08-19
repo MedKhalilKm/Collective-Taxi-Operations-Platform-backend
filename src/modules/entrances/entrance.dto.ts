@@ -9,7 +9,7 @@ type EntranceWithRelations = Entrance & {
 export interface EntranceResponseDto {
   id: number;
   createdAt: Date;
-  status: "ready" | "pending" | "waiting";
+  status: "ready" | "pending" | "waiting" | "departed";
   vehicleId: number;
   stationId: number;
   driverId: string;

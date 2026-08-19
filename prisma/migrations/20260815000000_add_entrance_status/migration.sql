@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "EntranceStatus" AS ENUM ('ready', 'pending', 'waiting');
+CREATE TYPE "EntranceStatus" AS ENUM ('ready', 'pending', 'waiting', 'departed');
 
 -- AlterTable
 ALTER TABLE "Entrance"

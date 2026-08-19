@@ -27,6 +27,7 @@ enum EntranceStatus {
   ready
   pending
   waiting
+  departed
 }
 
 // ----------------------------------------------------------------------------
