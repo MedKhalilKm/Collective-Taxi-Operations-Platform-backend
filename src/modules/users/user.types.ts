@@ -9,6 +9,7 @@ export interface CreateUserPayload {
   password: string;
   role: Role | string;
   status?: string;
+  stationId?: number | null;
 }
 
 export interface UpdateUserPayload {
@@ -20,6 +21,7 @@ export interface UpdateUserPayload {
   role?: Role | string;
   status?: string;
   password?: string;
+  stationId?: number | null;
 }
 
 export interface UserQueryFilters {

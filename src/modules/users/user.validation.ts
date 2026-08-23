@@ -32,6 +32,7 @@ export const createUserSchema = z.object({
     .max(128, "Password must not exceed 128 characters"),
   role: z.enum(roleValues).optional().default("Admin"),
   status: z.enum(["active", "inactive"]).optional().default("active"),
+  stationId: z.coerce.number().int().positive("Station ID must be a positive number").optional().nullable(),
 });
 
 export const updateUserSchema = z.object({
@@ -56,6 +57,7 @@ export const updateUserSchema = z.object({
     .optional(),
   role: z.enum(roleValues).optional(),
   status: z.enum(["active", "inactive"]).optional(),
+  stationId: z.coerce.number().int().positive("Station ID must be a positive number").optional().nullable(),
 });
 
 export const userQuerySchema = z.object({

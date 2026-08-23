@@ -63,6 +63,7 @@ export class UserService {
       hashedPassword,
       role: normalizedRole,
       status: payload.status || "active",
+      stationId: payload.stationId,
     });
 
     return UserDto.toResponse(newUser);
@@ -105,6 +106,7 @@ export class UserService {
       role: normalizedRole,
       status: payload.status,
       hashedPassword,
+      stationId: payload.stationId,
     });
 
     return UserDto.toResponse(updatedUser);

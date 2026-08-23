@@ -70,6 +70,7 @@ export class UserRepository {
     hashedPassword: string;
     role: Role;
     status: string;
+    stationId?: number | null;
   }): Promise<User> {
     const userId = randomUUID();
     const now = new Date();
@@ -85,6 +86,7 @@ export class UserRepository {
           firstName: data.firstName,
           lastName: data.lastName,
           phoneNumber: data.phoneNumber,
+          stationId: data.stationId ?? null,
           passwd: data.hashedPassword,
           role: data.role,
           status: data.status,
@@ -122,6 +124,7 @@ export class UserRepository {
       role?: Role;
       status?: string;
       hashedPassword?: string;
+      stationId?: number | null;
     }
   ): Promise<User> {
     return prisma.$transaction(async (tx) => {
@@ -139,6 +142,15 @@ export class UserRepository {
       if (data.role) updateData.role = data.role;
       if (data.status) updateData.status = data.status;
       if (data.hashedPassword) updateData.passwd = data.hashedPassword;
+      if (data.stationId !== undefined) {
+        updateData.station = data.stationId
+          ? {
+              connect: { id: data.stationId },
+            }
+          : {
+              disconnect: true,
+            };
+      }
 
       const newFirstName = data.firstName ?? existingUser.firstName;
       const newLastName = data.lastName ?? existingUser.lastName;

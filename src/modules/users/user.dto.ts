@@ -8,6 +8,7 @@ export interface UserResponseDto {
   firstName: string;
   lastName: string;
   phoneNumber: string;
+  stationId: number | null;
   role: string;
   status: string;
   emailVerified: boolean;
@@ -26,6 +27,7 @@ export class UserDto {
       firstName: user.firstName,
       lastName: user.lastName,
       phoneNumber: user.phoneNumber,
+      stationId: user.stationId,
       role: user.role,
       status: user.status,
       emailVerified: user.emailVerified,

@@ -63,7 +63,12 @@ model User {
   // 1-N: a User can make many reservations (reservation.userId is optional)
   reservations  Reservation[]
 
+  // Optional association: many users can belong to one station
+  stationId     Int?
+  station       Station? @relation(fields: [stationId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
   @@index([role])
+  @@index([stationId])
 }
 
 // ----------------------------------------------------------------------------
@@ -156,6 +161,7 @@ model Station {
 
   routes    Route[] @relation("RouteStations")
   entrances Entrance[]
+  users     User[]
 
   @@index([governorate, city])
 }
