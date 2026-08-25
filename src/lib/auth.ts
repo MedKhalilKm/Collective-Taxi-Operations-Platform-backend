@@ -80,6 +80,11 @@ export const auth = betterAuth({
         defaultValue: "Passanger",
         input: false,
       },
+      stationId: {
+        type: "number",
+        required: false,
+        input: false,
+      },
     },
   },
 

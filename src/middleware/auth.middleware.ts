@@ -12,6 +12,7 @@ export interface AuthenticatedUser {
   phoneNumber?: string;
   role: Role | string;
   status?: string;
+  stationId?: number | null;
 }
 
 export interface AuthContext {

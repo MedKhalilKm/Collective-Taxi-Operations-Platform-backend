@@ -1,7 +1,10 @@
-import { Entrance, Reservation, User } from "@prisma/client";
+import { Entrance, Reservation, Station, User, Vehicle } from "@prisma/client";
 
 type ReservationWithRelations = Reservation & {
-  entrance: Entrance;
+  entrance: Entrance & {
+    station: Station;
+    vehicle: Vehicle;
+  };
   user: User | null;
 };
 
@@ -12,7 +15,10 @@ export interface ReservationResponseDto {
   createdAt: Date;
   entranceId: number;
   userId: string | null;
-  entrance: Entrance;
+  entrance: Entrance & {
+    station: Station;
+    vehicle: Vehicle;
+  };
   user: User | null;
 }
 

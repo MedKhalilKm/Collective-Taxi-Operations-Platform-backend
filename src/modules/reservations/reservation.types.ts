@@ -17,4 +17,5 @@ export interface ReservationQueryFilters {
   reservationRef?: string;
   page?: number;
   limit?: number;
+  agentStationId?: number;
 }

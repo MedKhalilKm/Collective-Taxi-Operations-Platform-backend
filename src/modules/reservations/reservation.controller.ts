@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/middleware/auth.middleware";
-import { canManageDrivers } from "@/middleware/role.middleware";
+import { canManageDrivers, normalizeRole } from "@/middleware/role.middleware";
+import { Role } from "@prisma/client";
 import { ApiResponse, PaginatedResponse } from "@/types/api.types";
 import { ReservationService } from "./reservation.service";
 import {
@@ -49,7 +50,15 @@ export class ReservationController {
         );
       }
 
-      const { reservations, meta } = await this.reservationService.getReservations(validation.data);
+      const userRole = normalizeRole(authResult.user.role.toString());
+      const filters = {
+        ...validation.data,
+        ...(userRole === Role.Agent && authResult.user.stationId
+          ? { agentStationId: Number(authResult.user.stationId) }
+          : {}),
+      };
+
+      const { reservations, meta } = await this.reservationService.getReservations(filters);
 
       return NextResponse.json<PaginatedResponse<unknown>>({
         success: true,

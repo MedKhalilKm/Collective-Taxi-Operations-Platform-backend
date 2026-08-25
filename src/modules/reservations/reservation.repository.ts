@@ -7,13 +7,26 @@ import {
 } from "./reservation.types";
 
 const reservationInclude = {
-  entrance: true,
+  entrance: {
+    include: {
+      station: true,
+      vehicle: true,
+    },
+  },
   user: true,
 } satisfies Prisma.ReservationInclude;
 
 export class ReservationRepository {
   async findMany(filters: ReservationQueryFilters) {
-    const { search, entranceId, userId, reservationRef, page = 1, limit = 10 } = filters;
+    const {
+      search,
+      entranceId,
+      userId,
+      reservationRef,
+      page = 1,
+      limit = 10,
+      agentStationId,
+    } = filters;
     const skip = (page - 1) * limit;
 
     const where: Prisma.ReservationWhereInput = {};
@@ -38,6 +51,14 @@ export class ReservationRepository {
 
     if (reservationRef) {
       where.ReservationRef = { contains: reservationRef, mode: "insensitive" };
+    }
+
+    if (agentStationId) {
+      where.entrance = {
+        is: {
+          stationId: agentStationId,
+        },
+      };
     }
 
     const [reservations, total] = await Promise.all([
