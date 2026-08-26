@@ -1,7 +1,7 @@
 import { UserRepository } from "./user.repository";
 import { UserDto, UserResponseDto } from "./user.dto";
 import { CreateUserPayload, UpdateUserPayload, UserQueryFilters } from "./user.types";
-import { normalizeRole } from "@/middleware/role.middleware";
+import { normalizeRole, normalizeStatus } from "@/middleware/role.middleware";
 import { hashPassword } from "@/lib/auth";
 import { PaginatedMeta } from "@/types/api.types";
 
@@ -41,7 +41,8 @@ export class UserService {
   }
 
   async createUser(payload: CreateUserPayload): Promise<UserResponseDto> {
-    const existingEmail = await this.userRepository.findByEmail(payload.email);
+    const email = payload.email.trim().toLowerCase();
+    const existingEmail = await this.userRepository.findByEmail(email);
     if (existingEmail) {
       throw new Error("EMAIL_ALREADY_EXISTS");
     }
@@ -55,14 +56,14 @@ export class UserService {
     const normalizedRole = normalizeRole(payload.role.toString());
 
     const newUser = await this.userRepository.create({
-      email: payload.email,
+      email,
       username: payload.username,
       firstName: payload.firstName,
       lastName: payload.lastName,
       phoneNumber: payload.phoneNumber,
       hashedPassword,
       role: normalizedRole,
-      status: payload.status || "active",
+      status: normalizeStatus(payload.status || "active"),
       stationId: payload.stationId,
     });
 
@@ -76,8 +77,9 @@ export class UserService {
       throw new Error("USER_NOT_FOUND");
     }
 
-    if (payload.email && payload.email !== user.email) {
-      const existingEmail = await this.userRepository.findByEmail(payload.email);
+    const email = payload.email?.trim().toLowerCase();
+    if (email && email !== user.email.toLowerCase()) {
+      const existingEmail = await this.userRepository.findByEmail(email);
       if (existingEmail) {
         throw new Error("EMAIL_ALREADY_EXISTS");
       }
@@ -98,13 +100,13 @@ export class UserService {
     const normalizedRole = payload.role ? normalizeRole(payload.role.toString()) : undefined;
 
     const updatedUser = await this.userRepository.update(id, {
-      email: payload.email,
+      email,
       username: payload.username,
       firstName: payload.firstName,
       lastName: payload.lastName,
       phoneNumber: payload.phoneNumber,
       role: normalizedRole,
-      status: payload.status,
+      status: payload.status === undefined ? undefined : normalizeStatus(payload.status),
       hashedPassword,
       stationId: payload.stationId,
     });

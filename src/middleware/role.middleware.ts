@@ -25,6 +25,14 @@ export function normalizeRole(role: unknown): Role {
   }
 }
 
+export function normalizeStatus(status: unknown): string {
+  return String(status ?? "").trim().toLowerCase();
+}
+
+export function isActiveStatus(status: unknown): boolean {
+  return normalizeStatus(status) === "active";
+}
+
 /**
  * Checks if user has one of the allowed roles.
  */

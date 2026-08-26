@@ -1,17 +1,14 @@
 import { z } from "zod";
+import { normalizeRole } from "@/middleware/role.middleware";
 
-const roleValues = [
-  "SUPER_ADMIN",
-  "ADMIN",
-  "AGENT",
-  "DRIVER",
-  "USER",
-  "SuperAdmin",
-  "Admin",
-  "Agent",
-  "Driver",
-  "Passanger",
-] as const;
+const roleSchema = z.preprocess(
+  (value) => normalizeRole(value),
+  z.enum(["Passanger", "Agent", "Admin", "SuperAdmin", "Driver"])
+);
+const statusSchema = z.preprocess(
+  (value) => typeof value === "string" ? value.trim().toLowerCase() : value,
+  z.enum(["active", "inactive"])
+);
 
 export const createUserSchema = z.object({
   email: z.string().email("Invalid email format"),
@@ -30,8 +27,8 @@ export const createUserSchema = z.object({
     .string()
     .min(8, "Password must be at least 8 characters long")
     .max(128, "Password must not exceed 128 characters"),
-  role: z.enum(roleValues).optional().default("Admin"),
-  status: z.enum(["active", "inactive"]).optional().default("active"),
+  role: roleSchema.optional().default("Admin"),
+  status: statusSchema.optional().default("active"),
   stationId: z.coerce.number().int().positive("Station ID must be a positive number").optional().nullable(),
 });
 
@@ -55,8 +52,8 @@ export const updateUserSchema = z.object({
     .min(8, "Password must be at least 8 characters long")
     .max(128, "Password must not exceed 128 characters")
     .optional(),
-  role: z.enum(roleValues).optional(),
-  status: z.enum(["active", "inactive"]).optional(),
+  role: roleSchema.optional(),
+  status: statusSchema.optional(),
   stationId: z.coerce.number().int().positive("Station ID must be a positive number").optional().nullable(),
 });
 

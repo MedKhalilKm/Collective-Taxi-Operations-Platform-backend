@@ -13,6 +13,18 @@ function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "";
 }
 
+function copySetCookieHeaders(source: Headers, target: Headers): void {
+  const cookies = typeof source.getSetCookie === "function"
+    ? source.getSetCookie()
+    : source.get("set-cookie")
+      ? [source.get("set-cookie") as string]
+      : [];
+
+  for (const cookie of cookies) {
+    target.append("set-cookie", cookie);
+  }
+}
+
 export class AuthController {
   private authService: AuthService;
 
@@ -52,11 +64,7 @@ export class AuthController {
       );
 
       // Copy set-cookie headers from Better Auth response
-      responseHeaders.forEach((value, key) => {
-        if (key.toLowerCase() === "set-cookie") {
-          response.headers.append("set-cookie", value);
-        }
-      });
+      copySetCookieHeaders(responseHeaders, response.headers);
 
       return response;
     } catch (error) {
@@ -69,6 +77,13 @@ export class AuthController {
             error: "Unauthorized",
             message: "Invalid email/username or password",
           },
+          { status: 401 }
+        );
+      }
+
+      if (message === "AUTH_SESSION_CREATION_FAILED") {
+        return NextResponse.json<ApiResponse>(
+          { success: false, error: "Unauthorized", message: "Unable to create an authenticated session" },
           { status: 401 }
         );
       }
@@ -108,11 +123,7 @@ export class AuthController {
         { status: 200 }
       );
 
-      responseHeaders.forEach((value, key) => {
-        if (key.toLowerCase() === "set-cookie") {
-          response.headers.append("set-cookie", value);
-        }
-      });
+      copySetCookieHeaders(responseHeaders, response.headers);
 
       return response;
     } catch (error) {

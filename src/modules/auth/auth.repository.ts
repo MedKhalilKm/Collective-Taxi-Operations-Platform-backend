@@ -8,8 +8,8 @@ export type AuthUser = Prisma.UserGetPayload<{ include: typeof userInclude }>;
 
 export class AuthRepository {
   async findUserByEmail(email: string): Promise<AuthUser | null> {
-    return prisma.user.findUnique({
-      where: { email }, include: userInclude,
+    return prisma.user.findFirst({
+      where: { email: { equals: email.trim(), mode: "insensitive" } }, include: userInclude,
     });
   }
 
@@ -22,6 +22,18 @@ export class AuthRepository {
   async findUserById(id: string): Promise<AuthUser | null> {
     return prisma.user.findUnique({
       where: { id }, include: userInclude,
+    });
+  }
+
+  async normalizeUserEmail(userId: string, email: string): Promise<AuthUser> {
+    const normalizedEmail = email.trim().toLowerCase();
+    return prisma.$transaction(async (tx) => {
+      await tx.user.update({ where: { id: userId }, data: { email: normalizedEmail } });
+      await tx.account.updateMany({
+        where: { userId, providerId: "credential" },
+        data: { accountId: normalizedEmail },
+      });
+      return tx.user.findUniqueOrThrow({ where: { id: userId }, include: userInclude });
     });
   }
 

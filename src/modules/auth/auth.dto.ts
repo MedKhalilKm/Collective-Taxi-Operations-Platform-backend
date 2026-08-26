@@ -1,6 +1,7 @@
 import { User } from "@prisma/client";
 import { AuthUserResponse } from "./auth.types";
 import { AuthUser } from "./auth.repository";
+import { normalizeRole, normalizeStatus } from "@/middleware/role.middleware";
 
 export class AuthDto {
   static toUserResponse(user: User | AuthUser): AuthUserResponse {
@@ -12,10 +13,10 @@ export class AuthDto {
       firstName: user.firstName,
       lastName: user.lastName,
       phoneNumber: user.phoneNumber,
-      role: user.role,
+      role: normalizeRole(user.role),
       stationId: user.stationId,
       station: "station" in user ? user.station : null,
-      status: user.status,
+      status: normalizeStatus(user.status),
       emailVerified: user.emailVerified,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,

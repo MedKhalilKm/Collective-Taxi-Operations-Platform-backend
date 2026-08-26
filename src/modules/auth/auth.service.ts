@@ -10,6 +10,7 @@ import {
 import { verifyPassword, hashPassword, auth } from "@/lib/auth";
 import { sendResetPasswordEmail } from "@/lib/email";
 import { randomBytes } from "crypto";
+import { isActiveStatus, normalizeRole } from "@/middleware/role.middleware";
 
 export class AuthService {
   private authRepository: AuthRepository;
@@ -31,7 +32,7 @@ export class AuthService {
       throw new Error("INVALID_CREDENTIALS");
     }
 
-    if (user.status !== "active") {
+    if (!isActiveStatus(user.status)) {
       throw new Error("ACCOUNT_INACTIVE");
     }
 
@@ -44,6 +45,12 @@ export class AuthService {
       throw new Error("INVALID_CREDENTIALS");
     }
 
+    // Better Auth normalizes email input before querying. Keep legacy mixed
+    // case records compatible by canonicalizing them before its lookup.
+    if (user.email !== user.email.trim().toLowerCase()) {
+      user = await this.authRepository.normalizeUserEmail(user.id, user.email);
+    }
+
     // Call Better Auth to produce session and cookies
     const authRes = await auth.api.signInEmail({
       body: {
@@ -54,8 +61,18 @@ export class AuthService {
       asResponse: true,
     });
 
+    if (!authRes.ok) {
+      const details = await authRes.clone().text().catch(() => "");
+      console.error("Better Auth sign-in failed", {
+        email: user.email,
+        status: authRes.status,
+        details,
+      });
+      throw new Error("AUTH_SESSION_CREATION_FAILED");
+    }
+
     return {
-      user: AuthDto.toUserResponse(user),
+      user: AuthDto.toUserResponse({ ...user, role: normalizeRole(user.role) }),
       responseHeaders: authRes.headers,
     };
   }
@@ -101,7 +118,7 @@ export class AuthService {
   async forgotPassword(payload: ForgotPasswordPayload): Promise<void> {
     const user = await this.authRepository.findUserByEmail(payload.email);
 
-    if (!user || user.status !== "active") {
+    if (!user || !isActiveStatus(user.status)) {
       return;
     }
 
@@ -127,7 +144,7 @@ export class AuthService {
     }
 
     const user = await this.authRepository.findUserById(userId);
-    if (!user || user.status !== "active") {
+    if (!user || !isActiveStatus(user.status)) {
       throw new Error("INVALID_RESET_TOKEN");
     }
 
