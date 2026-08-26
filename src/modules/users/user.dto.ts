@@ -1,4 +1,6 @@
-import { User } from "@prisma/client";
+import { Prisma, User } from "@prisma/client";
+
+type UserWithStation = Prisma.UserGetPayload<{ include: { station: true } }>;
 
 export interface UserResponseDto {
   id: string;
@@ -18,7 +20,7 @@ export interface UserResponseDto {
 }
 
 export class UserDto {
-  static toResponse(user: User): UserResponseDto {
+  static toResponse(user: User | UserWithStation): UserResponseDto & { station?: UserWithStation["station"] } {
     return {
       id: user.id,
       name: user.name,
@@ -34,6 +36,7 @@ export class UserDto {
       image: user.image,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
+      ...( "station" in user ? { station: user.station } : {}),
     };
   }
 

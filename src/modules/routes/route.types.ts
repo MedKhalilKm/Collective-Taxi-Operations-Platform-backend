@@ -4,7 +4,7 @@ export interface CreateRoutePayload {
   firstDestination: string;
   secondDestination: string;
   fee: number;
-  altitude: number;
+  altitude?: number;
   description: string;
   stationIds?: number[];
 }

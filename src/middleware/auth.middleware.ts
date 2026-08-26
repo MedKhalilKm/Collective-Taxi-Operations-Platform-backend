@@ -1,6 +1,8 @@
 import { auth } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { Role } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import { normalizeRole } from "./role.middleware";
 
 export interface AuthenticatedUser {
   id: string;
@@ -13,6 +15,7 @@ export interface AuthenticatedUser {
   role: Role | string;
   status?: string;
   stationId?: number | null;
+  station?: { id: number; name: string } | null;
 }
 
 export interface AuthContext {
@@ -37,8 +40,19 @@ export async function getAuthSession(req: NextRequest): Promise<AuthContext | nu
       return null;
     }
 
+    // Better Auth's session user can contain cached/custom fields. Always use
+    // the current database row for authorization and station scoping.
+    const user = await prisma.user.findUnique({
+      where: { id: sessionData.user.id },
+      include: { station: { select: { id: true, name: true } } },
+    });
+
+    if (!user) {
+      return null;
+    }
+
     return {
-      user: sessionData.user as AuthenticatedUser,
+      user: { ...user, role: normalizeRole(user.role) } as AuthenticatedUser,
       session: sessionData.session,
     };
   } catch (error) {

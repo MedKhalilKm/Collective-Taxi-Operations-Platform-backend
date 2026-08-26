@@ -9,7 +9,7 @@ export interface RouteResponseDto {
   firstDestination: string;
   secondDestination: string;
   fee: number;
-  altitude: number;
+  altitude: number | null;
   description: string;
   stationIds: number[];
   stations: Station[];

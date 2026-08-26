@@ -177,7 +177,7 @@ model Route {
   firstDestination  String
   secondDestination String // NOTE: must differ from firstDestination — enforced at application level
   fee               Float
-  altitude          Float
+  altitude          Float?
   description       String
 
   stations  Station[] @relation("RouteStations")

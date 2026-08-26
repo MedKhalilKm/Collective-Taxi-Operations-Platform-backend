@@ -34,6 +34,8 @@ export interface AuthUserResponse {
   emailVerified: boolean;
   createdAt: Date;
   updatedAt: Date;
+  stationId: number | null;
+  station: { id: number; name: string } | null;
 }
 
 export interface LoginResult {

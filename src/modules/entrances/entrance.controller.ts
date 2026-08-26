@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/middleware/auth.middleware";
-import { canManageDrivers, normalizeRole } from "@/middleware/role.middleware";
-import { Role } from "@prisma/client";
+import { canManageEntrances, isAgent } from "@/middleware/role.middleware";
 import { ApiResponse, PaginatedResponse } from "@/types/api.types";
 import { EntranceService } from "./entrance.service";
 import { createEntranceSchema, entranceQuerySchema, updateEntranceSchema } from "./entrance.validation";
@@ -47,18 +46,8 @@ export class EntranceController {
         );
       }
 
-      const userRole = normalizeRole(authResult.user.role.toString());
-      const agentStationId =
-        userRole === Role.Agent && authResult.user.stationId != null
-          ? Number(authResult.user.stationId)
-          : undefined;
-
-      if (agentStationId !== undefined) {
-        const requestedStationId = validation.data.stationId;
-        if (requestedStationId && requestedStationId !== agentStationId) {
-          return this.forbiddenResponse();
-        }
-      }
+      const agentStationId = this.getAgentStationId(authResult.user);
+      if (isAgent(authResult.user) && agentStationId === undefined) return this.forbiddenResponse();
 
       const filters = {
         ...validation.data,
@@ -98,9 +87,9 @@ export class EntranceController {
       }
 
       const entrance = await this.entranceService.getEntranceById(entranceId);
-      const userRole = normalizeRole(authResult.user.role.toString());
-      if (userRole === Role.Agent && authResult.user.stationId != null) {
-        const agentStationId = Number(authResult.user.stationId);
+      const agentStationId = this.getAgentStationId(authResult.user);
+      if (isAgent(authResult.user) && agentStationId === undefined) return this.forbiddenResponse();
+      if (agentStationId !== undefined) {
         if (entrance.stationId !== agentStationId) {
           return this.forbiddenResponse();
         }
@@ -119,15 +108,12 @@ export class EntranceController {
         return authResult;
       }
 
-      if (!canManageDrivers(authResult.user)) {
+      if (!canManageEntrances(authResult.user)) {
         return this.forbiddenResponse();
       }
 
-      const userRole = normalizeRole(authResult.user.role.toString());
-      const agentStationId =
-        userRole === Role.Agent && authResult.user.stationId != null
-          ? Number(authResult.user.stationId)
-          : undefined;
+      const agentStationId = this.getAgentStationId(authResult.user);
+      if (isAgent(authResult.user) && agentStationId === undefined) return this.forbiddenResponse();
 
       const body = await req.json().catch(() => ({}));
       const validation = createEntranceSchema.safeParse(body);
@@ -141,6 +127,10 @@ export class EntranceController {
           },
           { status: 400 }
         );
+      }
+
+      if (agentStationId !== undefined && validation.data.stationId !== agentStationId) {
+        return this.forbiddenResponse();
       }
 
       const payload =
@@ -172,7 +162,7 @@ export class EntranceController {
         return authResult;
       }
 
-      if (!canManageDrivers(authResult.user)) {
+      if (!canManageEntrances(authResult.user)) {
         return this.forbiddenResponse();
       }
 
@@ -181,10 +171,10 @@ export class EntranceController {
         return this.validationResponse("Entrance ID must be a positive number");
       }
 
-      const userRole = normalizeRole(authResult.user.role.toString());
-      if (userRole === Role.Agent && authResult.user.stationId != null) {
+      const agentStationId = this.getAgentStationId(authResult.user);
+      if (agentStationId !== undefined) {
         const entrance = await this.entranceService.getEntranceById(entranceId);
-        if (entrance.stationId !== Number(authResult.user.stationId)) {
+        if (entrance.stationId !== agentStationId) {
           return this.forbiddenResponse();
         }
       }
@@ -203,7 +193,13 @@ export class EntranceController {
         );
       }
 
-      const entrance = await this.entranceService.updateEntrance(entranceId, validation.data);
+      if (isAgent(authResult.user) && agentStationId === undefined) return this.forbiddenResponse();
+      if (agentStationId !== undefined && validation.data.stationId !== undefined && validation.data.stationId !== agentStationId) {
+        return this.forbiddenResponse();
+      }
+      const entrance = await this.entranceService.updateEntrance(entranceId, agentStationId === undefined
+        ? validation.data
+        : { ...validation.data, stationId: agentStationId });
       return NextResponse.json<ApiResponse>({
         success: true,
         message: "Entrance updated successfully",
@@ -221,7 +217,7 @@ export class EntranceController {
         return authResult;
       }
 
-      if (!canManageDrivers(authResult.user)) {
+      if (!canManageEntrances(authResult.user)) {
         return this.forbiddenResponse();
       }
 
@@ -230,10 +226,11 @@ export class EntranceController {
         return this.validationResponse("Entrance ID must be a positive number");
       }
 
-      const userRole = normalizeRole(authResult.user.role.toString());
-      if (userRole === Role.Agent && authResult.user.stationId != null) {
+      const agentStationId = this.getAgentStationId(authResult.user);
+      if (isAgent(authResult.user) && agentStationId === undefined) return this.forbiddenResponse();
+      if (agentStationId !== undefined) {
         const entrance = await this.entranceService.getEntranceById(entranceId);
-        if (entrance.stationId !== Number(authResult.user.stationId)) {
+        if (entrance.stationId !== agentStationId) {
           return this.forbiddenResponse();
         }
       }
@@ -246,6 +243,12 @@ export class EntranceController {
     } catch (error) {
       return this.handleEntranceError(error, "Delete entrance controller error:", "Failed to delete entrance");
     }
+  }
+
+  private getAgentStationId(user: Parameters<typeof isAgent>[0]): number | undefined {
+    if (!isAgent(user)) return undefined;
+    const stationId = Number(user.stationId);
+    return Number.isInteger(stationId) && stationId > 0 ? stationId : undefined;
   }
 
   private forbiddenResponse(): NextResponse {

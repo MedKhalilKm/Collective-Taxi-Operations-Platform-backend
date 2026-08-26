@@ -1,25 +1,27 @@
 import { prisma } from "@/lib/prisma";
-import { User } from "@prisma/client";
+import { Prisma, User } from "@prisma/client";
 import { randomUUID } from "crypto";
 
 const PASSWORD_RESET_PREFIX = "reset-password:";
+const userInclude = { station: true } satisfies Prisma.UserInclude;
+export type AuthUser = Prisma.UserGetPayload<{ include: typeof userInclude }>;
 
 export class AuthRepository {
-  async findUserByEmail(email: string): Promise<User | null> {
+  async findUserByEmail(email: string): Promise<AuthUser | null> {
     return prisma.user.findUnique({
-      where: { email },
+      where: { email }, include: userInclude,
     });
   }
 
-  async findUserByUsername(username: string): Promise<User | null> {
+  async findUserByUsername(username: string): Promise<AuthUser | null> {
     return prisma.user.findUnique({
-      where: { username },
+      where: { username }, include: userInclude,
     });
   }
 
-  async findUserById(id: string): Promise<User | null> {
+  async findUserById(id: string): Promise<AuthUser | null> {
     return prisma.user.findUnique({
-      where: { id },
+      where: { id }, include: userInclude,
     });
   }
 

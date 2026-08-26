@@ -7,7 +7,7 @@ export const createRouteSchema = z
     firstDestination: z.string().min(1, "First destination is required"),
     secondDestination: z.string().min(1, "Second destination is required"),
     fee: z.coerce.number().positive("Fee must be positive"),
-    altitude: z.coerce.number(),
+    altitude: z.coerce.number().optional(),
     description: z.string().min(1, "Description is required"),
     stationIds: z.array(z.coerce.number().int().positive("Station ID must be positive")).optional(),
   })

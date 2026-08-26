@@ -56,6 +56,7 @@ export class RouteRepository {
     return prisma.route.create({
       data: {
         ...routeData,
+        altitude: routeData.altitude ?? null,
         stations: stationIds?.length
           ? {
               connect: stationIds.map((stationId) => ({ id: stationId })),
@@ -72,6 +73,7 @@ export class RouteRepository {
       where: { id },
       data: {
         ...routeData,
+        ...(routeData.altitude !== undefined ? { altitude: routeData.altitude } : {}),
         ...(stationIds
           ? {
               stations: {

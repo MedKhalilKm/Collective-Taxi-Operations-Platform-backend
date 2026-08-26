@@ -1,11 +1,11 @@
 import { Role } from "@prisma/client";
-import { AuthenticatedUser } from "./auth.middleware";
+import type { AuthenticatedUser } from "./auth.middleware";
 
 /**
  * Maps standard role strings to Prisma `Role` enum values.
  */
-export function normalizeRole(role: string): Role {
-  const upper = role.toUpperCase();
+export function normalizeRole(role: unknown): Role {
+  const upper = String(role ?? "").trim().toUpperCase();
   switch (upper) {
     case "SUPER_ADMIN":
     case "SUPERADMIN":
@@ -21,7 +21,7 @@ export function normalizeRole(role: string): Role {
     case "PASSENGER":
       return Role.Passanger;
     default:
-      return role as Role;
+      return String(role ?? "").trim() as Role;
   }
 }
 
@@ -49,6 +49,14 @@ export function isAdminOrSuperAdmin(user: AuthenticatedUser): boolean {
  */
 export function canManageDrivers(user: AuthenticatedUser): boolean {
   return hasRole(user, [Role.SuperAdmin, Role.Admin, Role.Agent]);
+}
+
+export function canManageEntrances(user: AuthenticatedUser): boolean {
+  return hasRole(user, [Role.SuperAdmin, Role.Admin, Role.Agent]);
+}
+
+export function isAgent(user: AuthenticatedUser): boolean {
+  return hasRole(user, [Role.Agent]);
 }
 
 /**
