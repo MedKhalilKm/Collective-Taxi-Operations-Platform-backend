@@ -5,6 +5,7 @@ import { Role } from "@prisma/client";
 import { ApiResponse, PaginatedResponse } from "@/types/api.types";
 import { ReservationService } from "./reservation.service";
 import {
+  cancelReservationSeatsSchema,
   createReservationSchema,
   reservationQuerySchema,
   updateReservationSchema,
@@ -217,6 +218,47 @@ export class ReservationController {
     }
   }
 
+  async cancelReservationSeats(req: NextRequest, id: string): Promise<NextResponse> {
+    try {
+      const authResult = await requireAuth(req);
+      if (authResult instanceof NextResponse) {
+        return authResult;
+      }
+
+      if (!canManageDrivers(authResult.user)) {
+        return this.forbiddenResponse();
+      }
+
+      const reservationId = Number(id);
+      if (!Number.isInteger(reservationId) || reservationId <= 0) {
+        return this.validationResponse("Reservation ID must be a positive number");
+      }
+
+      const body = await req.json().catch(() => ({}));
+      const validation = cancelReservationSeatsSchema.safeParse(body);
+      if (!validation.success) {
+        return NextResponse.json<ApiResponse>(
+          {
+            success: false,
+            error: "Validation Error",
+            message: validation.error.issues[0]?.message || "Invalid input data",
+            errors: validation.error.flatten().fieldErrors,
+          },
+          { status: 400 }
+        );
+      }
+
+      const reservation = await this.reservationService.cancelReservationSeats(reservationId, validation.data);
+      return NextResponse.json<ApiResponse>({
+        success: true,
+        message: "Reservation seat cancelled successfully",
+        data: reservation,
+      });
+    } catch (error) {
+      return this.handleReservationError(error, "Cancel reservation seat controller error:", "Failed to cancel reservation seat");
+    }
+  }
+
   private forbiddenResponse(): NextResponse {
     return NextResponse.json<ApiResponse>(
       {
@@ -244,7 +286,8 @@ export class ReservationController {
 
     if (
       message === "RESERVATION_NOT_FOUND" ||
-      message === "RESERVATION_OR_FOREIGN_KEY_NOT_FOUND"
+      message === "RESERVATION_OR_FOREIGN_KEY_NOT_FOUND" ||
+      message === "RESERVATION_SEAT_REF_NOT_FOUND"
     ) {
       return NextResponse.json<ApiResponse>(
         {

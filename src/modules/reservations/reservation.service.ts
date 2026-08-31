@@ -4,6 +4,7 @@ import { PaginatedMeta } from "@/types/api.types";
 import { ReservationDto, ReservationResponseDto } from "./reservation.dto";
 import { ReservationRepository } from "./reservation.repository";
 import {
+  CancelReservationSeatsPayload,
   CreateReservationPayload,
   ReservationQueryFilters,
   UpdateReservationPayload,
@@ -12,6 +13,16 @@ import {
 function generateReservationRef(): string {
   const randomPart = randomBytes(8).toString("hex").toUpperCase();
   return `RES-${randomPart}`;
+}
+
+function generateSeatRefs(numberOfSeats: number): string[] {
+  const refs = new Set<string>();
+
+  while (refs.size < numberOfSeats) {
+    refs.add(generateReservationRef());
+  }
+
+  return [...refs];
 }
 
 export class ReservationService {
@@ -58,12 +69,18 @@ export class ReservationService {
   async createReservation(payload: CreateReservationPayload): Promise<ReservationResponseDto> {
     for (let attempt = 0; attempt < 5; attempt += 1) {
       try {
+        const reservationRefs = generateSeatRefs(payload.numberOfSeats);
         const reservation = await this.reservationRepository.create({
           ...payload,
           userId: payload.userId ?? null,
-          // Prisma schema already owns the unique ref; we generate it here for ticket printing
-          ReservationRef: generateReservationRef(),
-        } as unknown as CreateReservationPayload);
+          ReservationRef: reservationRefs[0],
+          seatRefs: {
+            create: reservationRefs.map((reservationRef, index) => ({
+              reservationRef,
+              seatNumber: index + 1,
+            })),
+          },
+        });
         return ReservationDto.toResponse(reservation);
       } catch (error) {
         if (this.isUniqueReservationRefConflict(error)) {
@@ -77,20 +94,61 @@ export class ReservationService {
   }
 
   async updateReservation(id: number, payload: UpdateReservationPayload): Promise<ReservationResponseDto> {
-    try {
-      const reservation = await this.reservationRepository.update(id, {
-        ...payload,
-        userId: payload.userId === undefined ? undefined : payload.userId ?? null,
-      });
-      return ReservationDto.toResponse(reservation);
-    } catch (error) {
-      this.handlePrismaError(error);
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      try {
+        const reservationRefs = payload.numberOfSeats === undefined
+          ? undefined
+          : generateSeatRefs(payload.numberOfSeats);
+
+        const reservation = await this.reservationRepository.update(id, {
+          ...payload,
+          userId: payload.userId === undefined ? undefined : payload.userId ?? null,
+          ...(reservationRefs
+            ? {
+                ReservationRef: reservationRefs[0],
+                seatRefs: {
+                  deleteMany: {},
+                  create: reservationRefs.map((reservationRef, index) => ({
+                    reservationRef,
+                    seatNumber: index + 1,
+                  })),
+                },
+              }
+            : {}),
+        });
+        return ReservationDto.toResponse(reservation);
+      } catch (error) {
+        if (this.isUniqueReservationRefConflict(error)) {
+          continue;
+        }
+        this.handlePrismaError(error);
+      }
     }
+
+    throw new Error("RESERVATION_REF_GENERATION_FAILED");
   }
 
   async deleteReservation(id: number): Promise<void> {
     try {
       await this.reservationRepository.delete(id);
+    } catch (error) {
+      this.handlePrismaError(error);
+    }
+  }
+
+  async cancelReservationSeats(id: number, payload: CancelReservationSeatsPayload): Promise<ReservationResponseDto> {
+    try {
+      const reservation = await this.reservationRepository.cancelSeatRefs(
+        id,
+        payload.seatRefIds,
+        payload.reservationRefs
+      );
+
+      if (!reservation) {
+        throw new Error("RESERVATION_SEAT_REF_NOT_FOUND");
+      }
+
+      return ReservationDto.toResponse(reservation);
     } catch (error) {
       this.handlePrismaError(error);
     }

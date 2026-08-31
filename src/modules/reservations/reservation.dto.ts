@@ -1,4 +1,4 @@
-import { Entrance, Reservation, Station, User, Vehicle } from "@prisma/client";
+import { Entrance, Reservation, ReservationSeatRef, Station, User, Vehicle } from "@prisma/client";
 
 type ReservationWithRelations = Reservation & {
   entrance: Entrance & {
@@ -6,11 +6,22 @@ type ReservationWithRelations = Reservation & {
     vehicle: Vehicle;
   };
   user: User | null;
+  seatRefs: ReservationSeatRef[];
 };
+
+export interface ReservationSeatRefResponseDto {
+  id: number;
+  reservationRef: string;
+  seatNumber: number;
+  status: ReservationSeatRef["status"];
+  createdAt: Date;
+}
 
 export interface ReservationResponseDto {
   id: number;
   ReservationRef: string;
+  reservationRefs: string[];
+  seatRefs: ReservationSeatRefResponseDto[];
   numberOfSeats: number;
   createdAt: Date;
   entranceId: number;
@@ -27,6 +38,14 @@ export class ReservationDto {
     return {
       id: reservation.id,
       ReservationRef: reservation.ReservationRef,
+      reservationRefs: reservation.seatRefs.map((seatRef) => seatRef.reservationRef),
+      seatRefs: reservation.seatRefs.map((seatRef) => ({
+        id: seatRef.id,
+        reservationRef: seatRef.reservationRef,
+        seatNumber: seatRef.seatNumber,
+        status: seatRef.status,
+        createdAt: seatRef.createdAt,
+      })),
       numberOfSeats: reservation.numberOfSeats,
       createdAt: reservation.createdAt,
       entranceId: reservation.entranceId,

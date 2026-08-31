@@ -30,6 +30,11 @@ enum EntranceStatus {
   departed
 }
 
+enum ReservationSeatStatus {
+  active
+  cancelled
+}
+
 // ----------------------------------------------------------------------------
 // USER  (merged: your fields + Better Auth required fields)
 // ----------------------------------------------------------------------------
@@ -251,6 +256,22 @@ model Reservation {
   userId String?
   user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
+  seatRefs ReservationSeatRef[]
+
   @@index([entranceId])
   @@index([userId])
+}
+
+model ReservationSeatRef {
+  id             Int         @id @default(autoincrement())
+  reservationRef String      @unique
+  seatNumber     Int
+  status         ReservationSeatStatus @default(active)
+  createdAt      DateTime    @default(now())
+
+  reservationId Int
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([reservationId, seatNumber])
+  @@index([reservationId])
 }

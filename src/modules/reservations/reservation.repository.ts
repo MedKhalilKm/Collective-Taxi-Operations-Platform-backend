@@ -1,9 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import {
-  CreateReservationPayload,
   ReservationQueryFilters,
-  UpdateReservationPayload,
 } from "./reservation.types";
 
 const reservationInclude = {
@@ -14,6 +12,9 @@ const reservationInclude = {
     },
   },
   user: true,
+  seatRefs: {
+    orderBy: { seatNumber: "asc" },
+  },
 } satisfies Prisma.ReservationInclude;
 
 export class ReservationRepository {
@@ -35,6 +36,7 @@ export class ReservationRepository {
       const numericSearch = Number(search);
       where.OR = [
         { ReservationRef: { contains: search, mode: "insensitive" } },
+        { seatRefs: { some: { reservationRef: { contains: search, mode: "insensitive" } } } },
         ...(Number.isNaN(numericSearch)
           ? []
           : [{ id: numericSearch }, { numberOfSeats: numericSearch }, { entranceId: numericSearch }]),
@@ -50,7 +52,11 @@ export class ReservationRepository {
     }
 
     if (reservationRef) {
-      where.ReservationRef = { contains: reservationRef, mode: "insensitive" };
+      where.OR = [
+        ...(where.OR || []),
+        { ReservationRef: { contains: reservationRef, mode: "insensitive" } },
+        { seatRefs: { some: { reservationRef: { contains: reservationRef, mode: "insensitive" } } } },
+      ];
     }
 
     if (agentStationId) {
@@ -83,24 +89,69 @@ export class ReservationRepository {
   }
 
   async findByReservationRef(reservationRef: string) {
-    return prisma.reservation.findUnique({
-      where: { ReservationRef: reservationRef },
+    return prisma.reservation.findFirst({
+      where: {
+        OR: [
+          { ReservationRef: reservationRef },
+          { seatRefs: { some: { reservationRef } } },
+        ],
+      },
       include: reservationInclude,
     });
   }
 
-  async create(data: CreateReservationPayload) {
+  async create(data: Prisma.ReservationUncheckedCreateInput) {
     return prisma.reservation.create({
       data,
       include: reservationInclude,
     });
   }
 
-  async update(id: number, data: UpdateReservationPayload) {
+  async update(id: number, data: Prisma.ReservationUncheckedUpdateInput) {
     return prisma.reservation.update({
       where: { id },
       data,
       include: reservationInclude,
+    });
+  }
+
+  async cancelSeatRefs(reservationId: number, seatRefIds?: number[], reservationRefs?: string[]) {
+    return prisma.$transaction(async (tx) => {
+      const matchingSeatRefs = await tx.reservationSeatRef.findMany({
+        where: {
+          reservationId,
+          status: "active",
+          OR: [
+            ...(seatRefIds?.length ? [{ id: { in: seatRefIds } }] : []),
+            ...(reservationRefs?.length ? [{ reservationRef: { in: reservationRefs } }] : []),
+          ],
+        },
+        select: { id: true },
+      });
+
+      if (!matchingSeatRefs.length) {
+        return null;
+      }
+
+      await tx.reservationSeatRef.updateMany({
+        where: {
+          id: { in: matchingSeatRefs.map((seatRef) => seatRef.id) },
+        },
+        data: { status: "cancelled" },
+      });
+
+      const activeSeatCount = await tx.reservationSeatRef.count({
+        where: {
+          reservationId,
+          status: "active",
+        },
+      });
+
+      return tx.reservation.update({
+        where: { id: reservationId },
+        data: { numberOfSeats: activeSeatCount },
+        include: reservationInclude,
+      });
     });
   }
 

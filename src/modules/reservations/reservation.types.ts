@@ -10,6 +10,11 @@ export interface UpdateReservationPayload {
   userId?: string | null;
 }
 
+export interface CancelReservationSeatsPayload {
+  seatRefIds?: number[];
+  reservationRefs?: string[];
+}
+
 export interface ReservationQueryFilters {
   search?: string;
   entranceId?: number;

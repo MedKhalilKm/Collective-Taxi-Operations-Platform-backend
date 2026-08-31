@@ -12,6 +12,16 @@ export const updateReservationSchema = z.object({
   userId: z.string().min(1, "User ID is required").optional().nullable(),
 });
 
+export const cancelReservationSeatsSchema = z
+  .object({
+    seatRefIds: z.array(z.coerce.number().int().positive("Seat ref ID must be positive")).optional(),
+    reservationRefs: z.array(z.string().min(1, "Reservation ref is required")).optional(),
+  })
+  .refine(
+    (data) => Boolean(data.seatRefIds?.length || data.reservationRefs?.length),
+    "At least one seat ref ID or reservation ref is required"
+  );
+
 export const reservationQuerySchema = z.object({
   search: z.string().optional(),
   entranceId: z.coerce.number().int().positive().optional(),
@@ -23,4 +33,5 @@ export const reservationQuerySchema = z.object({
 
 export type CreateReservationDtoInput = z.infer<typeof createReservationSchema>;
 export type UpdateReservationDtoInput = z.infer<typeof updateReservationSchema>;
+export type CancelReservationSeatsInput = z.infer<typeof cancelReservationSeatsSchema>;
 export type ReservationQueryInput = z.infer<typeof reservationQuerySchema>;
