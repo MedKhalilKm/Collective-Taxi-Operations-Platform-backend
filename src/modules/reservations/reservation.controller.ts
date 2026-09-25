@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/middleware/auth.middleware";
-import { canManageDrivers, normalizeRole } from "@/middleware/role.middleware";
+import { canCreateReservations, canManageDrivers, normalizeRole } from "@/middleware/role.middleware";
 import { Role } from "@prisma/client";
 import { ApiResponse, PaginatedResponse } from "@/types/api.types";
 import { ReservationService } from "./reservation.service";
@@ -119,8 +119,9 @@ export class ReservationController {
         return authResult;
       }
 
-      if (!canManageDrivers(authResult.user)) {
-        return this.forbiddenResponse();
+      const userRole = normalizeRole(authResult.user.role.toString());
+      if (!canCreateReservations(authResult.user)) {
+        return this.forbiddenResponse("Only passengers, agents, administrators, and super administrators can create reservations");
       }
 
       const body = await req.json().catch(() => ({}));
@@ -137,7 +138,11 @@ export class ReservationController {
         );
       }
 
-      const reservation = await this.reservationService.createReservation(validation.data);
+      const payload = userRole === Role.Passanger
+        ? { ...validation.data, userId: authResult.user.id }
+        : validation.data;
+
+      const reservation = await this.reservationService.createReservation(payload);
       return NextResponse.json<ApiResponse>(
         {
           success: true,
@@ -259,12 +264,12 @@ export class ReservationController {
     }
   }
 
-  private forbiddenResponse(): NextResponse {
+  private forbiddenResponse(message = "Only agents, administrators, and super administrators can manage reservations"): NextResponse {
     return NextResponse.json<ApiResponse>(
       {
         success: false,
         error: "Forbidden",
-        message: "Only agents, administrators, and super administrators can manage reservations",
+        message,
       },
       { status: 403 }
     );

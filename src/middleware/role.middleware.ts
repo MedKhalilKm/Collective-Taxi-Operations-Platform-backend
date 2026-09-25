@@ -59,6 +59,10 @@ export function canManageDrivers(user: AuthenticatedUser): boolean {
   return hasRole(user, [Role.SuperAdmin, Role.Admin, Role.Agent]);
 }
 
+export function canCreateReservations(user: AuthenticatedUser): boolean {
+  return hasRole(user, [Role.SuperAdmin, Role.Admin, Role.Agent, Role.Passanger]);
+}
+
 export function canManageEntrances(user: AuthenticatedUser): boolean {
   return hasRole(user, [Role.SuperAdmin, Role.Admin, Role.Agent]);
 }
